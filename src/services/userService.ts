@@ -1,13 +1,11 @@
 import firestore from '@react-native-firebase/firestore';
 
 /**
- * Fetches the full user document from Firestore.
+ * Fetches any user's profile from Firestore by UID.
  */
 export const getUserProfile = async (uid: string) => {
   try {
     const doc = await firestore().collection('Users').doc(uid).get();
-    // In some versions of RN Firebase, doc.exists is a property, in others a function.
-    // doc.exists() is used here based on your provided snippet.
     return doc.exists() ? doc.data() : null;
   } catch (error) {
     console.error("Error fetching user profile:", error);
@@ -16,7 +14,7 @@ export const getUserProfile = async (uid: string) => {
 };
 
 /**
- * Updates the user's Bio/About Me section in the cloud.
+ * Updates the user's Bio/About Me section.
  */
 export const updateUserBio = async (uid: string, bio: string) => {
   try {
@@ -34,8 +32,7 @@ export const updateUserBio = async (uid: string, bio: string) => {
 };
 
 /**
- * NEW: Updates the username in the database.
- * This fixes the "no exported member" error in SettingScreen.
+ * Updates the username in the database.
  */
 export const updateUserInDb = async (uid: string, username: string) => {
   try {
@@ -53,7 +50,7 @@ export const updateUserInDb = async (uid: string, username: string) => {
 };
 
 /**
- * Fetches just the username (for legacy support).
+ * Legacy support for fetching username only.
  */
 export const getUsername = async (uid: string) => {
   try {

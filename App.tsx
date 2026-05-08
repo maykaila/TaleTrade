@@ -9,7 +9,8 @@ import { AuthNavigator } from './src/navigation/AuthNavigator';
 import TabNavigator from './src/navigation/TabNavigator';
 import PickAGenreScreen from './src/screens/PickAGenreScreen';
 import GenreDetailScreen from './src/screens/GenreDetailScreen';
-import BookDetailScreen from './src/screens/BookDetailScreen'; // Fixed path from 'scr' to 'src'
+import BookDetailScreen from './src/screens/BookDetailScreen';
+import ProfileScreen from './src/screens/ProfileScreen'; // Ensure this path is correct
 
 const RootStack = createNativeStackNavigator();
 
@@ -18,13 +19,11 @@ const App = () => {
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
 
   useEffect(() => {
-    // Listener 1: Handles Login and Logout
     const authSubscriber = auth().onAuthStateChanged((userState) => {
       setUser(userState);
       if (initializing) setInitializing(false);
     });
 
-    // Listener 2: Handles Profile Updates
     const userSubscriber = auth().onUserChanged((userState) => {
       if (userState) setUser(userState);
     });
@@ -48,14 +47,12 @@ const App = () => {
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           !user.displayName ? (
-            /* CASE: User is logged in but hasn't picked a genre/name yet */
             <RootStack.Screen 
               name="Onboarding" 
               component={PickAGenreScreen} 
               key="onboarding-screen"
             />
           ) : (
-            /* CASE: Returning User - Main App Flow */
             <>
               <RootStack.Screen 
                 name="AppTabs" 
@@ -63,7 +60,19 @@ const App = () => {
                 key="main-app-tabs"
               />
               
-              {/* Full-screen stack pages accessible from Home or Search */}
+              {/* THE MISSING PIECE: Register UserProfileView here */}
+              <RootStack.Screen 
+                name="UserProfileView" 
+                component={ProfileScreen} 
+                options={{ 
+                    headerShown: true, 
+                    title: 'Reader Profile',
+                    headerTintColor: '#6C63FF',
+                    headerStyle: { backgroundColor: '#F5E9CF' }
+                }} 
+                key="user-profile-view"
+              />
+
               <RootStack.Screen 
                 name="GenreDetail" 
                 component={GenreDetailScreen} 
@@ -88,7 +97,6 @@ const App = () => {
             </>
           )
         ) : (
-          /* CASE: Not Logged In */
           <RootStack.Screen 
             name="Auth" 
             component={AuthNavigator} 
@@ -98,7 +106,7 @@ const App = () => {
       </RootStack.Navigator>
     </NavigationContainer>
   );
-}; // This closing brace was missing!
+};
 
 const styles = StyleSheet.create({
   loadingContainer: {

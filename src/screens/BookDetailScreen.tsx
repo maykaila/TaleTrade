@@ -1,156 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Alert, 
-  ActivityIndicator 
-} from 'react-native';
-import { 
-  getBookOwners, 
-  addBookToUserInventory, 
-  addToWishlist 
-} from '../services/userbookService';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { getBookOwners } from '../services/userbookService';
 
-const BookDetailScreen = ({ route }: any) => {
-  // Enforce absolute fallback logic case so route missing parameters never crash the frame
-  const bookData = route?.params?.bookData; 
-
+const BookDetailScreen = ({ route, navigation }: any) => {
+  const bookData = route?.params?.bookData;
   const [owners, setOwners] = useState<any[]>([]);
-  const [loadingAction, setLoadingAction] = useState(false);
 
-  // Safely extract the raw nested container properties, falling back to an empty object
   const bookId = bookData?.id;
   const volumeInfo = bookData?.volumeInfo || {};
-  
-  // UNIFIED BLUEPRINT RESOLVER: Reads safely from volumeInfo (raw) OR top-level (cleaned)
   const title = volumeInfo.title || bookData?.title || 'Untitled Book';
   const description = volumeInfo.description || bookData?.description || 'No description available.';
   const thumbnail = volumeInfo.imageLinks?.thumbnail || bookData?.thumbnail;
-  
-  // SURGICAL FIX: Enforce array type parsing checks before firing structural lookups
   const rawAuthors = volumeInfo.authors || bookData?.authors;
   const authorText = Array.isArray(rawAuthors) ? rawAuthors.join(', ') : 'Unknown Author';
 
-  const fetchOwners = async () => {
-    if (!bookId) return;
-    try {
-      const data = await getBookOwners(bookId);
-      setOwners(data);
-    } catch (err) {
-      console.log("Error fetching owners from Firestore:", err);
-    }
-  };
-
   useEffect(() => {
+    const fetchOwners = async () => {
+      if (!bookId) return;
+      try {
+        const data = await getBookOwners(bookId);
+        setOwners(data);
+      } catch (err) { console.log("Error fetching owners:", err); }
+    };
     fetchOwners();
   }, [bookId]);
 
-  const handleAddBook = async () => {
-    if (!bookData) return;
-    setLoadingAction(true);
-    try {
-      await addBookToUserInventory(bookData);
-      Alert.alert("Success", "Book added to your inventory!");
-      await fetchOwners(); 
-    } catch (error) {
-      Alert.alert("Error", "Could not add book. Please try again.");
-    } finally {
-      setLoadingAction(false);
-    }
-  };
-
-  const handleWishlist = async () => {
-    if (!bookData) return;
-    try {
-      await addToWishlist(bookData);
-      Alert.alert("Wishlist", "Added to your hearts!");
-    } catch (error) {
-      Alert.alert("Error", "Could not add to wishlist.");
-    }
-  };
-
-  // If data failed to migrate completely down the tab navigation chain
-  if (!bookData) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#333', fontWeight: 'bold' }}>No book context parameters detected.</Text>
-      </View>
-    );
-  }
-
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
       <View style={styles.header}>
-        {thumbnail ? (
-          <Image source={{ uri: thumbnail }} style={styles.mainCover} />
-        ) : (
-          <View style={[styles.mainCover, styles.placeholderCover]}>
-            <Text style={styles.placeholderText}>No Cover</Text>
-          </View>
-        )}
+        {thumbnail ? <Image source={{ uri: thumbnail }} style={styles.mainCover} /> : <View style={[styles.mainCover, styles.placeholderCover]}><Text>No Cover</Text></View>}
         <Text style={styles.title}>{title}</Text>
-        
-        {/* FIXED LINE 58: Enclosed fully in structural text layers using our safe computed variable */}
         <Text style={styles.author}>By {authorText}</Text>
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.buttonRow}>
-        <TouchableOpacity 
-          style={[styles.ownButton, loadingAction && { opacity: 0.7 }]} 
-          onPress={handleAddBook}
-          disabled={loadingAction}
-        >
-          {loadingAction ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.btnText}>+ Own This</Text>
-          )}
+        <TouchableOpacity style={styles.ownButton} onPress={() => {}}>
+          <Text style={styles.btnText}>+ Own This</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.wishButton} onPress={handleWishlist}>
+        <TouchableOpacity style={styles.wishButton} onPress={() => {}}>
           <Text style={styles.btnText}>Wishlist</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Description Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About this book</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
 
-      {/* Social Section (Dynamic Owners) */}
       <View style={styles.socialSection}>
         <Text style={styles.sectionTitle}>Users who own this book</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
           {owners.length > 0 ? (
             owners.map((item) => (
-              <TouchableOpacity 
-                key={item.id} 
+              <TouchableOpacity
+                key={item.id}
                 style={styles.ownerCard}
                 onPress={() => {
-                  if (item.isMe) {
-                    Alert.alert("Profile", "This is your collection!");
-                  } else {
-                    Alert.alert("Owner Info", `View ${item.username}'s profile to trade?`);
-                  }
+                  // DIRECT FIX: Navigate to top-level sibling
+                  navigation.navigate('UserProfileView', { userId: item.id });
                 }}
               >
-                <View style={[
-                  styles.profileCircleContainer, 
-                  item.isMe && { borderColor: '#6178b8', borderWidth: 3 } 
-                ]}>
+                <View style={[styles.profileCircleContainer, item.isMe && { borderColor: '#6178b8', borderWidth: 3 }]}>
                   <Image source={{ uri: item.photo }} style={styles.profileCircle} />
                 </View>
-                <Text style={[
-                  styles.ownerName, 
-                  item.isMe && { fontWeight: 'bold', color: '#6C63FF' }
-                ]}>
+                <Text style={[styles.ownerName, item.isMe && { fontWeight: 'bold', color: '#6C63FF' }]}>
                   {item.username}
                 </Text>
               </TouchableOpacity>
@@ -169,7 +82,6 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', padding: 20 },
   mainCover: { width: 200, height: 300, borderRadius: 15, elevation: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, backgroundColor: '#e2e8f0' },
   placeholderCover: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed' },
-  placeholderText: { color: '#94a3b8', fontWeight: 'bold' },
   title: { fontSize: 22, fontWeight: 'bold', marginTop: 15, textAlign: 'center', color: '#333' },
   author: { fontSize: 16, color: '#6C63FF', marginTop: 5, fontWeight: '600' },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 20 },
