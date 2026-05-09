@@ -7,7 +7,6 @@ import { Settings, BookOpen, ChevronRight, Send, Mail } from 'lucide-react-nativ
 import auth from '@react-native-firebase/auth';
 import { useIsFocused } from '@react-navigation/native';
 import { getUserProfile } from '../services/userService';
-// Import the inventory service to get the book count
 import { getUserInventory } from '../services/userbookService';
 
 const COLORS = { 
@@ -25,12 +24,12 @@ const ProfileScreen = ({ navigation, route }: any) => {
   const [initials, setInitials] = useState('??');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [socialLink, setSocialLink] = useState<string | null>(null);
-  // State for the dynamic book count
-  
 
   const visitedUserId = route?.params?.userId;
-  const currentUid = auth().currentUser?.uid;
+  // FLAG TO HIDE HEADER
+  const hideHeader = route?.params?.hideHeader; 
   
+  const currentUid = auth().currentUser?.uid;
   const targetUid = visitedUserId || currentUid;
   const isOwnProfile = !visitedUserId || visitedUserId === currentUid;
 
@@ -40,14 +39,13 @@ const ProfileScreen = ({ navigation, route }: any) => {
     setSocialLink(null);
     setProfileImage(null);
     setInitials('??');
-    setBookCount(0); // Reset count when switching profiles
+    setBookCount(0);
   }, [visitedUserId]);
 
   const fetchAndSetUserData = useCallback(async () => {
     if (!targetUid) return;
     
     try {
-      // 1. Fetch User Profile Info
       const userData = await getUserProfile(targetUid);
       if (userData) {
         setUserName(userData.username || 'Explorer');
@@ -62,8 +60,6 @@ const ProfileScreen = ({ navigation, route }: any) => {
         );
       }
 
-      // 2. Fetch Inventory for dynamic "Tales Read" count
-      // We pass targetUid to get the specific count for the profile being viewed
       const inventory = await getUserInventory(targetUid);
       setBookCount(inventory?.length || 0);
 
@@ -96,16 +92,25 @@ const ProfileScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{isOwnProfile ? "Profile" : "Reader Profile"}</Text>
-        {isOwnProfile && (
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.settingsButton}>
-            <Settings color={COLORS.primaryBlue} size={24} />
-          </TouchableOpacity>
-        )}
-      </View>
+      {/* CONDITIONALLY RENDER HEADER */}
+      {!hideHeader && (
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{isOwnProfile ? "Profile" : "Reader Profile"}</Text>
+          {isOwnProfile && (
+            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.settingsButton}>
+              <Settings color={COLORS.primaryBlue} size={24} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={[
+            styles.scrollContent, 
+            hideHeader && { paddingTop: 45 } // Adjust padding if header is hidden
+        ]} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.mainWrapper}>
           <View style={styles.avatarSection}>
             <View style={styles.avatarContainer}>
@@ -131,7 +136,6 @@ const ProfileScreen = ({ navigation, route }: any) => {
             </View>
           </View>
 
-          {/* Updated Stats Container: Dynamic Tales Read & Removed Tales Traded */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{bookCount}</Text>
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
   bioText: { fontSize: 15, color: '#444', textAlign: 'center', lineHeight: 20, fontStyle: 'italic' },
   statsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 35 },
   statItem: { 
-    width: '100%', // Takes full width of stats container
+    width: '100%', 
     alignItems: 'center', 
     backgroundColor: COLORS.white, 
     paddingVertical: 20, 

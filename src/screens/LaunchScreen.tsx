@@ -15,7 +15,7 @@ const LaunchScreen = ({ navigation }: any) => {
         {/* Top Row: Tale + Logo */}
         <View style={styles.topRow}>
           <Image
-            source={require('../assets/Logo.png')}
+            source={require('../assets/logoNoBg.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />

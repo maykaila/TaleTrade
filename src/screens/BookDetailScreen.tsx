@@ -34,7 +34,6 @@ const BookDetailScreen = ({ route, navigation }: any) => {
   const fetchOwners = async () => {
     if (!bookId) return;
     try {
-      // Ensure getBookOwners returns the 'photoURL' field from the Users collection
       const data = await getBookOwners(bookId);
       setOwners(data);
     } catch (err) {
@@ -46,7 +45,6 @@ const BookDetailScreen = ({ route, navigation }: any) => {
     fetchOwners();
   }, [bookId]);
 
-  // Helper to get initials if photo is missing
   const getInitials = (name: string) => {
     const parts = name.trim().split(' ');
     return parts.length > 1 
@@ -132,19 +130,21 @@ const BookDetailScreen = ({ route, navigation }: any) => {
                 key={item.id} 
                 style={styles.ownerCard}
                 onPress={() => {
-                  navigation.push('UserProfileView', { userId: item.id });
+                  // PASS hideHeader PARAMETER HERE
+                  navigation.push('UserProfileView', { 
+                    userId: item.id,
+                    hideHeader: true 
+                  });
                 }}
               >
                 <View style={[
                   styles.profileCircleContainer, 
                   item.isMe && { borderColor: '#4A68BE', borderWidth: 2 } 
                 ]}>
-                  {/* Logic: If photo exists, show Image. Otherwise, show Initials View */}
                   {item.photo ? (
                     <Image 
                       source={{ uri: item.photo }} 
                       style={styles.profileCircle} 
-                      onError={() => console.log(`Failed to load image for ${item.username}`)}
                     />
                   ) : (
                     <View style={[styles.profileCircle, styles.initialsContainer]}>
@@ -171,28 +171,27 @@ const BookDetailScreen = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E9CF' },
-  header: { alignItems: 'center', padding: 20 },
-  mainCover: { width: 200, height: 300, borderRadius: 15, elevation: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, backgroundColor: '#e2e8f0' },
-  placeholderCover: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed' },
+  header: { alignItems: 'center', padding: 25, backgroundColor: '#F5E9CF', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
+  mainCover: { width: 180, height: 270, borderRadius: 15, elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
+  placeholderCover: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' },
   placeholderText: { color: '#94a3b8', fontWeight: 'bold' },
-  title: { fontSize: 22, fontWeight: 'bold', marginTop: 15, textAlign: 'center', color: '#333' },
-  author: { fontSize: 16, color: '#6C63FF', marginTop: 5, fontWeight: '600' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 20 },
-  ownButton: { backgroundColor: '#6C63FF', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
-  wishButton: { backgroundColor: '#b84242', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold' },
-  section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#222' },
-  description: { color: '#666', lineHeight: 22, fontSize: 14, textAlign: 'justify' },
-  socialSection: { padding: 20, borderTopWidth: 1, borderColor: '#eee', marginBottom: 30 },
+  title: { fontSize: 24, fontWeight: '900', marginTop: 20, textAlign: 'center', color: '#4A68BE' },
+  author: { fontSize: 16, color: '#7E6FB0', marginTop: 5, fontWeight: '600' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 25, paddingHorizontal: 15 },
+  ownButton: { backgroundColor: '#4A68BE', padding: 15, borderRadius: 20, width: '46%', alignItems: 'center', elevation: 3 },
+  wishButton: { backgroundColor: '#7E6FB0', padding: 15, borderRadius: 20, width: '46%', alignItems: 'center', elevation: 3 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  section: { padding: 20, marginHorizontal: 15, backgroundColor: '#FFF', borderRadius: 20, marginBottom: 20, elevation: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 10, color: '#4A68BE' },
+  description: { color: '#555', lineHeight: 22, fontSize: 14, textAlign: 'justify' },
+  socialSection: { padding: 20, marginHorizontal: 15, backgroundColor: '#FFF', borderRadius: 20, marginBottom: 40, elevation: 2 },
   ownerCard: { alignItems: 'center', marginRight: 20 },
-  profileCircleContainer: { borderRadius: 35, padding: 2, justifyContent: 'center', alignItems: 'center' },
-  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#6C63FF', backgroundColor: '#FFF' },
-  // ADDED: styles for initials fallback
-  initialsContainer: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
+  profileCircleContainer: { borderRadius: 35, padding: 2 },
+  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#7E6FB0', backgroundColor: '#FFF' },
+  initialsContainer: { justifyContent: 'center', alignItems: 'center' },
   initialsText: { color: '#7E6FB0', fontWeight: 'bold', fontSize: 18 },
-  ownerName: { fontSize: 12, marginTop: 5, color: '#555' },
-  noOwners: { fontStyle: 'italic', color: '#999' }
+  ownerName: { fontSize: 12, marginTop: 5, color: '#555', fontWeight: '600' },
+  noOwners: { fontStyle: 'italic', color: '#999', textAlign: 'center', width: '100%' }
 });
 
 export default BookDetailScreen;

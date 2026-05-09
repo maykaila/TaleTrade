@@ -4,28 +4,15 @@ import {
   SafeAreaView, ActivityIndicator, RefreshControl, Image, Alert
 } from 'react-native';
 import { getUserInventory, removeBookFromInventory } from '../services/userbookService';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
 
-/**
- * Reconstructs the Google Books API shape from flat Firestore fields.
- * BookDetailScreen expects bookData.volumeInfo.title, etc.
- */
 const reconstructBookData = (item: any) => ({
   id: item.bookId || item.id,
   volumeInfo: {
     title: item.title,
     authors: item.author ? item.author.split(', ') : [],
     description: item.description || '',
-    publisher: item.publisher || '',
-    publishedDate: item.publishedDate || '',
-    pageCount: item.pageCount || 0,
-    categories: item.categories || [],
-    imageLinks: {
-      thumbnail: item.thumbnail || null,
-    },
-    industryIdentifiers: item.isbn
-      ? [{ identifier: item.isbn }]
-      : [],
+    imageLinks: { thumbnail: item.thumbnail || null },
   },
 });
 
@@ -39,7 +26,7 @@ export default function MyBooksScreen({ navigation }: any) {
       const data = await getUserInventory();
       setBooks(data);
     } catch (error) {
-      console.error("Failed to fetch inventory:", error);
+      console.error(error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -54,8 +41,8 @@ export default function MyBooksScreen({ navigation }: any) {
   }, []);
 
   const handleDelete = (id: string) => {
-    Alert.alert('Remove Book', 'Remove this book from your shelf?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Remove Tale', 'Remove this book from your shelf? 🥺', [
+      { text: 'Keep it', style: 'cancel' },
       {
         text: 'Remove', style: 'destructive',
         onPress: async () => {
@@ -63,7 +50,6 @@ export default function MyBooksScreen({ navigation }: any) {
             setBooks(prev => prev.filter(book => book.id !== id));
             await removeBookFromInventory(id);
           } catch (error) {
-            console.error("Delete failed:", error);
             fetchBooks();
           }
         }
@@ -71,112 +57,69 @@ export default function MyBooksScreen({ navigation }: any) {
     ]);
   };
 
-  const handleBookPress = (item: any) => {
-    navigation.navigate('BookDetail', {
-      bookData: reconstructBookData(item),
-    });
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#4A68BE" />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft color="#4A68BE" size={24} />
-        </TouchableOpacity> */}
-        <Text style={styles.title}>My Books</Text>
+        <Text style={styles.headerTitle}>My Books</Text>
       </View>
 
-      <FlatList
-        data={books}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4A68BE" />
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => handleBookPress(item)}
-            activeOpacity={0.85}
-          >
-            {item.thumbnail ? (
-              <Image source={{ uri: item.thumbnail }} style={styles.cover} />
-            ) : (
-              <View style={styles.coverPlaceholder}>
-                <Text style={styles.placeholderText}>📚</Text>
-              </View>
-            )}
-
-            <View style={styles.info}>
-              <Text style={styles.bookTitle} numberOfLines={2}>
-                {item.title || 'Untitled Book'}
-              </Text>
-              {item.author && (
-                <Text style={styles.author} numberOfLines={1}>{item.author}</Text>
-              )}
-              {item.categories?.length > 0 && (
-                <Text style={styles.genre} numberOfLines={1}>{item.categories[0]}</Text>
-              )}
-            </View>
-
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator color="#4A68BE" /></View>
+      ) : (
+        <FlatList
+          data={books}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7E6FB0" />}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => handleDelete(item.id)}
-              style={styles.removeBtn}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.bentoCard}
+              onPress={() => navigation.navigate('BookDetail', { bookData: reconstructBookData(item) })}
             >
-              <Text style={styles.delete}>Remove</Text>
+              <Image source={{ uri: item.thumbnail }} style={styles.cover} />
+              <View style={styles.info}>
+                <Text style={styles.bookTitle} numberOfLines={2}>{item.title}</Text>
+                <Text style={styles.author}>{item.author}</Text>
+              </View>
+              <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
+                <Trash2 color="#FF8DA1" size={20} />
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>📖</Text>
-            <Text style={styles.emptyText}>You haven't added any books yet.</Text>
-          </View>
-        }
-      />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Your shelf is empty...</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E9CF' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5E9CF' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, marginBottom: 20 },
-  backButton: { backgroundColor: '#FFF', padding: 8, borderRadius: 12, elevation: 3, marginRight: 15 },
-  title: { fontSize: 28, fontWeight: '900', color: '#4A68BE', textDecorationLine: 'underline' },
-  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  card: {
-    backgroundColor: '#fff',
-    marginVertical: 8,
-    borderRadius: 15,
+  center: { flex: 1, justifyContent: 'center' },
+  header: { paddingHorizontal: 25, paddingTop: 50, marginBottom: 15 },
+  headerTitle: { fontSize: 28, fontWeight: '900', color: '#4A68BE' },
+  listContent: { paddingHorizontal: 25, paddingBottom: 100 },
+  bentoCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 24, 
+    padding: 15, 
+    marginBottom: 15, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
     elevation: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10
   },
-  cover: { width: 70, height: 100 },
-  coverPlaceholder: {
-    width: 70, height: 100,
-    backgroundColor: '#e0d5c1',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  placeholderText: { fontSize: 24 },
-  info: { flex: 1, paddingHorizontal: 14, paddingVertical: 12 },
-  bookTitle: { fontSize: 15, color: '#1a1a1a', fontWeight: 'bold', marginBottom: 4 },
-  author: { fontSize: 13, color: '#666', marginBottom: 4 },
-  genre: { fontSize: 11, color: '#9b87c8', fontStyle: 'italic' },
-  removeBtn: { paddingHorizontal: 14, paddingVertical: 8 },
-  delete: { color: '#7E6FB0', fontWeight: 'bold', fontSize: 13 },
-  emptyContainer: { marginTop: 100, alignItems: 'center', gap: 10 },
-  emptyEmoji: { fontSize: 48 },
-  emptyText: { color: '#666', fontSize: 16 },
+  cover: { width: 65, height: 95, borderRadius: 12, backgroundColor: '#FDFCF0' },
+  info: { flex: 1, marginLeft: 15 },
+  bookTitle: { fontSize: 16, fontWeight: '800', color: '#4A68BE', marginBottom: 4 },
+  author: { fontSize: 13, color: '#7E6FB0', fontWeight: '600' },
+  deleteBtn: { padding: 10 },
+  emptyContainer: { marginTop: 100, alignItems: 'center' },
+  emptyText: { color: '#7E6FB0', fontWeight: '600', fontStyle: 'italic' }
 });

@@ -10,7 +10,7 @@ import TabNavigator from './src/navigation/TabNavigator';
 import PickAGenreScreen from './src/screens/PickAGenreScreen';
 import GenreDetailScreen from './src/screens/GenreDetailScreen';
 import BookDetailScreen from './src/screens/BookDetailScreen';
-import ProfileScreen from './src/screens/ProfileScreen'; // Ensure this path is correct
+import ProfileScreen from './src/screens/ProfileScreen'; 
 
 const RootStack = createNativeStackNavigator();
 
@@ -60,7 +60,6 @@ const App = () => {
                 key="main-app-tabs"
               />
               
-              {/* THE MISSING PIECE: Register UserProfileView here */}
               <RootStack.Screen 
                 name="UserProfileView" 
                 component={ProfileScreen} 
@@ -73,14 +72,17 @@ const App = () => {
                 key="user-profile-view"
               />
 
+              {/* UPDATED: Dynamic Title based on Genre Name */}
               <RootStack.Screen 
                 name="GenreDetail" 
                 component={GenreDetailScreen} 
-                options={{ 
+                options={({ route }: any) => ({ 
                     headerShown: true, 
-                    title: 'Explore',
-                    headerTintColor: '#6C63FF' 
-                }} 
+                    title: route.params?.genreName || 'Explore', // Reflects the genre name
+                    headerTintColor: '#6C63FF',
+                    headerStyle: { backgroundColor: '#F5E9CF' },
+                    headerTitleStyle: { fontWeight: '900' }
+                })} 
                 key="genre-detail-screen"
               />
 
@@ -90,7 +92,8 @@ const App = () => {
                 options={{ 
                   headerShown: true, 
                   title: 'Book Details',
-                  headerTintColor: '#6C63FF' 
+                  headerTintColor: '#6C63FF',
+                  headerStyle: { backgroundColor: '#F5E9CF' } 
                 }} 
                 key="book-detail-screen"
               />
@@ -111,7 +114,7 @@ const App = () => {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1, 
-    backgroundColor: '#ad9154', 
+    backgroundColor: '#F5E9CF', 
     justifyContent: 'center', 
     alignItems: 'center'
   }
