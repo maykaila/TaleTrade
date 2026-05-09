@@ -78,3 +78,21 @@ export const updateUserProfileImage = async (uid: string, imageUrl: string) => {
     throw error;
   }
 };
+
+/**
+ * Updates the user's contact/social link in Firestore.
+ */
+export const updateUserSocialLink = async (uid: string, link: string) => {
+  try {
+    return await firestore()
+      .collection('Users')
+      .doc(uid)
+      .set({
+        socialLink: link,
+        lastUpdated: firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+  } catch (error) {
+    console.error("Error updating social link:", error);
+    throw error;
+  }
+};

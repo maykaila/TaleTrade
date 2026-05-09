@@ -8,7 +8,7 @@ import {
 import { ChevronLeft, User, Trash2, Save, Camera, CheckCircle, AlignLeft, LogOut } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { updateUserInDb, getUserProfile, updateUserBio, updateUserProfileImage } from '../services/userService';
+import { updateUserInDb, getUserProfile, updateUserBio, updateUserProfileImage, updateUserSocialLink } from '../services/userService';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -26,6 +26,7 @@ const COLORS = {
 const SettingScreen = ({ navigation }: any) => {
   const [newName, setNewName] = useState('');
   const [newBio, setNewBio] = useState('');
+  const [newSocialLink, setNewSocialLink] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tempImage, setTempImage] = useState<string | null>(null);
 
@@ -40,7 +41,7 @@ const SettingScreen = ({ navigation }: any) => {
       if (userData) {
         setNewName(userData.username || '');
         setNewBio(userData.bio || '');
-        // Get image from Firestore instead of AsyncStorage
+        setNewSocialLink(userData.socialLink || '');
         if (userData.photoURL) {
           setProfileImage(userData.photoURL);
           setTempImage(userData.photoURL);
@@ -83,10 +84,9 @@ const SettingScreen = ({ navigation }: any) => {
     const user = auth().currentUser;
     if (tempImage && user) {
       try {
-        // Save to Firestore instead of AsyncStorage
         await updateUserProfileImage(user.uid, tempImage);
         setProfileImage(tempImage);
-        Alert.alert("Success! ✨", "Profile picture updated in the cloud.");
+        Alert.alert("Success! ✨", "Profile picture updated.");
       } catch (error) {
         Alert.alert("Error", "Failed to save image.");
       }
@@ -105,6 +105,7 @@ const SettingScreen = ({ navigation }: any) => {
     try {
       await updateUserInDb(user.uid, newName.trim());
       await updateUserBio(user.uid, newBio.trim());
+      await updateUserSocialLink(user.uid, newSocialLink.trim());
       
       Alert.alert("Success!", "Profile updated ✨", [
         { text: "OK", onPress: () => navigation.goBack() }
@@ -151,7 +152,6 @@ const SettingScreen = ({ navigation }: any) => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* PHOTO SECTION */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={styles.iconWrapper}><Camera color={COLORS.softPurple} size={20} /></View>
@@ -181,7 +181,6 @@ const SettingScreen = ({ navigation }: any) => {
             </View>
           </View>
 
-          {/* BIO & NAME SECTION */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={styles.iconWrapper}><AlignLeft color={COLORS.softPurple} size={20} /></View>
@@ -208,13 +207,23 @@ const SettingScreen = ({ navigation }: any) => {
               numberOfLines={4}
             />
 
+            <Text style={styles.label}>Contact Link (FB, IG, etc.)</Text>
+            <TextInput
+              style={styles.input}
+              value={newSocialLink}
+              onChangeText={setNewSocialLink}
+              placeholder="https://facebook.com/yourprofile"
+              placeholderTextColor="#AAA"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
             <TouchableOpacity style={styles.primaryBtn} onPress={handleUpdateProfile}>
               <Save color={COLORS.white} size={18} />
               <Text style={styles.btnText}>Save Profile</Text>
             </TouchableOpacity>
           </View>
 
-          {/* DANGER COLUMN: Vertically stacked buttons */}
           <View style={styles.dangerColumn}>
             <TouchableOpacity style={[styles.dangerBtn, styles.logoutBtn]} onPress={handleLogout}>
               <LogOut color={COLORS.danger} size={18} />
@@ -235,22 +244,8 @@ const SettingScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.creamBg },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) + 15 : 10, 
-    paddingBottom: 15 
-  },
-  backCircle: { 
-    backgroundColor: COLORS.white, 
-    width: 45, height: 45, 
-    borderRadius: 22.5, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    elevation: 4 
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) + 15 : 10, paddingBottom: 15 },
+  backCircle: { backgroundColor: COLORS.white, width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   headerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.primaryBlue },
   scrollContent: { padding: 25, paddingBottom: 120 },
   sectionCard: { backgroundColor: COLORS.white, borderRadius: 30, padding: 20, marginBottom: 25, elevation: 4 },
@@ -270,33 +265,11 @@ const styles = StyleSheet.create({
   imagePickerBtnText: { color: COLORS.primaryBlue, fontWeight: '700', fontSize: 14 },
   savePhotoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: COLORS.success },
   savePhotoBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 14 },
-  
-  // Danger Column Styles
-  dangerColumn: { 
-    marginTop: 10,
-    gap: 15, 
-    marginBottom: 30 
-  },
-  dangerBtn: { 
-    width: '100%',
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    padding: 18, 
-    borderRadius: 22, 
-    borderWidth: 2, 
-    borderColor: COLORS.danger, 
-    gap: 10, 
-  },
+  dangerColumn: { marginTop: 10, gap: 15, marginBottom: 30 },
+  dangerBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 22, borderWidth: 2, borderColor: COLORS.danger, gap: 10 },
   dangerBtnText: { color: COLORS.danger, fontWeight: '800', fontSize: 16 },
-  logoutBtn: { 
-    backgroundColor: 'rgba(255, 107, 107, 0.05)', 
-    borderStyle: 'solid' 
-  },
-  deleteBtn: { 
-    borderStyle: 'dashed',
-    opacity: 0.6 
-  },
+  logoutBtn: { backgroundColor: 'rgba(255, 107, 107, 0.05)', borderStyle: 'solid' },
+  deleteBtn: { borderStyle: 'dashed', opacity: 0.6 },
 });
 
 export default SettingScreen;

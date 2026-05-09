@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Platform, StatusBar, Image } from 'react-native';
-import { Settings, BookOpen, ChevronRight } from 'lucide-react-native';
+import { 
+  View, Text, StyleSheet, SafeAreaView, TouchableOpacity, 
+  ScrollView, Platform, StatusBar, Image, Linking, Alert 
+} from 'react-native';
+import { Settings, BookOpen, ChevronRight, Send, Mail } from 'lucide-react-native'; // Added Mail icon
 import auth from '@react-native-firebase/auth';
 import { useIsFocused } from '@react-navigation/native';
 import { getUserProfile } from '../services/userService';
@@ -8,15 +11,14 @@ import { getUserProfile } from '../services/userService';
 const COLORS = { primaryBlue: '#4A68BE', softPurple: '#7E6FB0', creamBg: '#F5E9CF', white: '#FFFFFF' };
 
 const ProfileScreen = ({ navigation, route }: any) => {
-  // 1. ALL HOOKS MUST GO AT THE VERY TOP
   const isFocused = useIsFocused();
   
   const [userName, setUserName] = useState('...');
   const [bio, setBio] = useState('...');
   const [initials, setInitials] = useState('??');
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [socialLink, setSocialLink] = useState<string | null>(null);
 
-  // 2. Variables derived from props/auth
   const visitedUserId = route?.params?.userId;
   const isOwnProfile = !visitedUserId || visitedUserId === auth().currentUser?.uid;
 
@@ -28,6 +30,7 @@ const ProfileScreen = ({ navigation, route }: any) => {
       setUserName(userData?.username || 'Explorer');
       setBio(userData?.bio || 'Introduce yourself to the community! 📚');
       setProfileImage(userData?.photoURL || null);
+      setSocialLink(userData?.socialLink || null);
 
       const nameParts = (userData?.username || 'Explorer').trim().split(' ');
       setInitials(nameParts.length > 1 
@@ -42,6 +45,31 @@ const ProfileScreen = ({ navigation, route }: any) => {
       fetchAndSetUserData();
     }
   }, [isFocused, fetchAndSetUserData]);
+
+  const handleContactPress = async () => {
+    if (!socialLink) return;
+    
+    // 1. Trim whitespace
+    let url = socialLink.trim();
+
+    // 2. Ensure it has a protocol (Linking requires http:// or https://)
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+
+    try {
+      // 3. Attempt to open directly. This will trigger the device's
+      // browser or the specific app (FB/IG) if installed.
+      await Linking.openURL(url);
+    } catch (error) {
+      // 4. Detailed error logging to help you debug
+      console.error("Link Error:", error);
+      Alert.alert(
+        "Link Error", 
+        "We couldn't open this link. Please make sure the URL in settings is valid (e.g., facebook.com/username)."
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,10 +93,25 @@ const ProfileScreen = ({ navigation, route }: any) => {
       >
         <View style={styles.mainWrapper}>
           <View style={styles.avatarSection}>
-            <View style={styles.avatarCircle}>
-              {profileImage ? <Image source={{ uri: profileImage }} style={styles.profileImage} /> : <Text style={styles.avatarInitials}>{initials}</Text>}
+            <View style={styles.avatarContainer}>
+                <View style={styles.avatarCircle}>
+                {profileImage ? <Image source={{ uri: profileImage }} style={styles.profileImage} /> : <Text style={styles.avatarInitials}>{initials}</Text>}
+                </View>
+                
+                {/* COHESIVE PLACEMENT 1: Floating Action Button on Avatar */}
+                {socialLink && (
+                    <TouchableOpacity 
+                        onPress={handleContactPress}
+                        style={styles.avatarContactBadge}
+                        activeOpacity={0.8}
+                    >
+                        <Send color={COLORS.white} size={14} />
+                    </TouchableOpacity>
+                )}
             </View>
+            
             <Text style={styles.userName}>{userName}</Text>
+
             <View style={styles.bioContainer}>
               <Text style={styles.bioTitle}>About Me</Text>
               <View style={styles.bioContent}><Text style={styles.bioText}>{bio}</Text></View>
@@ -81,22 +124,36 @@ const ProfileScreen = ({ navigation, route }: any) => {
             <View style={styles.statItem}><Text style={styles.statValue}>4</Text><Text style={styles.statLabel}>Tales Traded</Text></View>
           </View>
 
-          {isOwnProfile && (
-            <View style={styles.menuContainer}>
-              <Text style={styles.menuTitle}>Library</Text>
-              <TouchableOpacity style={styles.menuItem}>
-                <View style={styles.menuItemLeft}><View style={styles.iconBackground}><BookOpen color={COLORS.softPurple} size={18} /></View><Text style={styles.menuItemLabel}>My Saved Tales</Text></View>
-                <ChevronRight color="#CCCCCC" size={18} />
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* COHESIVE PLACEMENT 2: Integrated into the Menu List */}
+          <View style={styles.menuContainer}>
+            <Text style={styles.menuTitle}>Library & Social</Text>
+            
+            {isOwnProfile && (
+                <TouchableOpacity style={styles.menuItem}>
+                    <View style={styles.menuItemLeft}>
+                        <View style={styles.iconBackground}><BookOpen color={COLORS.softPurple} size={18} /></View>
+                        <Text style={styles.menuItemLabel}>My Saved Tales</Text>
+                    </View>
+                    <ChevronRight color="#CCCCCC" size={18} />
+                </TouchableOpacity>
+            )}
+
+            {socialLink && (
+                <TouchableOpacity style={styles.menuItem} onPress={handleContactPress}>
+                    <View style={styles.menuItemLeft}>
+                        <View style={[styles.iconBackground, { backgroundColor: '#E8F0FE' }]}><Mail color={COLORS.primaryBlue} size={18} /></View>
+                        <Text style={styles.menuItemLabel}>Contact Reader</Text>
+                    </View>
+                    <Send color={COLORS.primaryBlue} size={16} />
+                </TouchableOpacity>
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-// ... styles remain exactly the same
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.creamBg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, paddingTop: Platform.OS === 'android' ? 50 : 0, paddingBottom: 20 },
@@ -105,7 +162,22 @@ const styles = StyleSheet.create({
   mainWrapper: { paddingHorizontal: 25 },
   scrollContent: { paddingTop: 10, paddingBottom: 140 },
   avatarSection: { alignItems: 'center', marginBottom: 35 },
+  avatarContainer: { position: 'relative' },
   avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', elevation: 8, marginBottom: 15, overflow: 'hidden' },
+  avatarContactBadge: { 
+    position: 'absolute', 
+    bottom: 12, 
+    right: -2, 
+    backgroundColor: COLORS.softPurple, 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 3, 
+    borderColor: COLORS.creamBg,
+    elevation: 10
+  },
   profileImage: { width: '100%', height: '100%' },
   avatarInitials: { fontSize: 36, fontWeight: '800', color: COLORS.softPurple },
   userName: { fontSize: 24, fontWeight: '700', color: COLORS.primaryBlue, marginBottom: 10 },
