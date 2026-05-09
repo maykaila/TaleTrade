@@ -182,7 +182,7 @@ const ProfileScreen = ({ navigation, route }: any) => {
                           {isOwnProfile ? "My Contact Link" : "Contact Reader"}
                         </Text>
                     </View>
-                    <Send color={COLORS.primaryBlue} size={16} />
+                    <ChevronRight  color="#CCCCCC" size={18} />
                 </TouchableOpacity>
             ) : (
                 /* Fallback if no link exists and we're looking at someone else */
