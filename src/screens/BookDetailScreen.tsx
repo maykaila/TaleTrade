@@ -15,7 +15,6 @@ import {
   addToWishlist 
 } from '../services/userbookService';
 
-// ADDED: navigation prop to handle redirection
 const BookDetailScreen = ({ route, navigation }: any) => {
   const bookData = route?.params?.bookData; 
 
@@ -35,6 +34,7 @@ const BookDetailScreen = ({ route, navigation }: any) => {
   const fetchOwners = async () => {
     if (!bookId) return;
     try {
+      // Ensure getBookOwners returns the 'photoURL' field from the Users collection
       const data = await getBookOwners(bookId);
       setOwners(data);
     } catch (err) {
@@ -46,7 +46,14 @@ const BookDetailScreen = ({ route, navigation }: any) => {
     fetchOwners();
   }, [bookId]);
 
-  // UNTOUCHED: Existing button logic
+  // Helper to get initials if photo is missing
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    return parts.length > 1 
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() 
+      : parts[0][0].toUpperCase();
+  };
+
   const handleAddBook = async () => {
     if (!bookData) return;
     setLoadingAction(true);
@@ -61,7 +68,6 @@ const BookDetailScreen = ({ route, navigation }: any) => {
     }
   };
 
-  // UNTOUCHED: Existing button logic
   const handleWishlist = async () => {
     if (!bookData) return;
     try {
@@ -82,7 +88,6 @@ const BookDetailScreen = ({ route, navigation }: any) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
       <View style={styles.header}>
         {thumbnail ? (
           <Image source={{ uri: thumbnail }} style={styles.mainCover} />
@@ -95,7 +100,6 @@ const BookDetailScreen = ({ route, navigation }: any) => {
         <Text style={styles.author}>By {authorText}</Text>
       </View>
 
-      {/* Action Buttons (UNTOUCHED) */}
       <View style={styles.buttonRow}>
         <TouchableOpacity 
           style={[styles.ownButton, loadingAction && { opacity: 0.7 }]} 
@@ -114,13 +118,11 @@ const BookDetailScreen = ({ route, navigation }: any) => {
         </TouchableOpacity>
       </View>
 
-      {/* Description Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About this book</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
 
-      {/* Social Section (MODIFIED onPress only) */}
       <View style={styles.socialSection}>
         <Text style={styles.sectionTitle}>Users who own this book</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
@@ -130,19 +132,29 @@ const BookDetailScreen = ({ route, navigation }: any) => {
                 key={item.id} 
                 style={styles.ownerCard}
                 onPress={() => {
-                  // UPDATED: Navigates to the profile of the clicked user
                   navigation.navigate('UserProfileView', { userId: item.id });
                 }}
               >
                 <View style={[
                   styles.profileCircleContainer, 
-                  item.isMe && { borderColor: '#6178b8', borderWidth: 3 } 
+                  item.isMe && { borderColor: '#4A68BE', borderWidth: 2 } 
                 ]}>
-                  <Image source={{ uri: item.photo }} style={styles.profileCircle} />
+                  {/* Logic: If photo exists, show Image. Otherwise, show Initials View */}
+                  {item.photo ? (
+                    <Image 
+                      source={{ uri: item.photo }} 
+                      style={styles.profileCircle} 
+                      onError={() => console.log(`Failed to load image for ${item.username}`)}
+                    />
+                  ) : (
+                    <View style={[styles.profileCircle, styles.initialsContainer]}>
+                      <Text style={styles.initialsText}>{getInitials(item.username || 'U')}</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[
                   styles.ownerName, 
-                  item.isMe && { fontWeight: 'bold', color: '#6C63FF' }
+                  item.isMe && { fontWeight: 'bold', color: '#4A68BE' }
                 ]}>
                   {item.username}
                 </Text>
@@ -175,7 +187,10 @@ const styles = StyleSheet.create({
   socialSection: { padding: 20, borderTopWidth: 1, borderColor: '#eee', marginBottom: 30 },
   ownerCard: { alignItems: 'center', marginRight: 20 },
   profileCircleContainer: { borderRadius: 35, padding: 2, justifyContent: 'center', alignItems: 'center' },
-  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#6C63FF' },
+  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#6C63FF', backgroundColor: '#FFF' },
+  // ADDED: styles for initials fallback
+  initialsContainer: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
+  initialsText: { color: '#7E6FB0', fontWeight: 'bold', fontSize: 18 },
   ownerName: { fontSize: 12, marginTop: 5, color: '#555' },
   noOwners: { fontStyle: 'italic', color: '#999' }
 });

@@ -196,7 +196,8 @@ export const getBookOwners = async (bookId: string) => {
             username: isMe
               ? "You"
               : (userData?.username || userData?.displayName || 'Anonymous'),
-            photo: userData?.profilePic || 'https://via.placeholder.com/150',
+            // CHANGE THIS LINE: from userData?.profilePic to userData?.photoURL
+            photo: userData?.photoURL || null, 
             isMe,
           });
         }
