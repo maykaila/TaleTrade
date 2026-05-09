@@ -8,7 +8,7 @@ import {
 import { ChevronLeft, User, Trash2, Save, Camera, CheckCircle, AlignLeft, LogOut } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { updateUserInDb, getUserProfile, updateUserBio } from '../services/userService';
+import { updateUserInDb, getUserProfile, updateUserBio, updateUserProfileImage } from '../services/userService';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -40,12 +40,12 @@ const SettingScreen = ({ navigation }: any) => {
       if (userData) {
         setNewName(userData.username || '');
         setNewBio(userData.bio || '');
+        // Get image from Firestore instead of AsyncStorage
+        if (userData.photoURL) {
+          setProfileImage(userData.photoURL);
+          setTempImage(userData.photoURL);
+        }
       }
-    }
-    const savedImage = await AsyncStorage.getItem('user_profile_image');
-    if (savedImage) {
-      setProfileImage(savedImage);
-      setTempImage(savedImage);
     }
   };
 
@@ -80,10 +80,16 @@ const SettingScreen = ({ navigation }: any) => {
   };
 
   const handleSavePhoto = async () => {
-    if (tempImage) {
-      await AsyncStorage.setItem('user_profile_image', tempImage);
-      setProfileImage(tempImage);
-      Alert.alert("Success! ✨", "Profile picture updated.");
+    const user = auth().currentUser;
+    if (tempImage && user) {
+      try {
+        // Save to Firestore instead of AsyncStorage
+        await updateUserProfileImage(user.uid, tempImage);
+        setProfileImage(tempImage);
+        Alert.alert("Success! ✨", "Profile picture updated in the cloud.");
+      } catch (error) {
+        Alert.alert("Error", "Failed to save image.");
+      }
     }
   };
 

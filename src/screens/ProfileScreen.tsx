@@ -2,17 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Platform, StatusBar, Image } from 'react-native';
 import { Settings, BookOpen, ChevronRight } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
 import { getUserProfile } from '../services/userService';
 
 const COLORS = { primaryBlue: '#4A68BE', softPurple: '#7E6FB0', creamBg: '#F5E9CF', white: '#FFFFFF' };
 
 const ProfileScreen = ({ navigation, route }: any) => {
+  // 1. ALL HOOKS MUST GO AT THE VERY TOP
+  const isFocused = useIsFocused();
+  
   const [userName, setUserName] = useState('...');
   const [bio, setBio] = useState('...');
   const [initials, setInitials] = useState('??');
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
+  // 2. Variables derived from props/auth
   const visitedUserId = route?.params?.userId;
   const isOwnProfile = !visitedUserId || visitedUserId === auth().currentUser?.uid;
 
@@ -20,26 +24,29 @@ const ProfileScreen = ({ navigation, route }: any) => {
     const targetUid = visitedUserId || auth().currentUser?.uid;
     if (targetUid) {
       const userData = await getUserProfile(targetUid);
+      
       setUserName(userData?.username || 'Explorer');
       setBio(userData?.bio || 'Introduce yourself to the community! 📚');
-      
-      const savedLocalImage = isOwnProfile ? await AsyncStorage.getItem('user_profile_image') : null;
-      setProfileImage(userData?.photoURL || savedLocalImage || null);
+      setProfileImage(userData?.photoURL || null);
 
       const nameParts = (userData?.username || 'Explorer').trim().split(' ');
-      setInitials(nameParts.length > 1 ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() : nameParts[0][0].toUpperCase());
+      setInitials(nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase() 
+        : nameParts[0][0].toUpperCase()
+      );
     }
-  }, [visitedUserId, isOwnProfile]);
+  }, [visitedUserId]);
 
   useEffect(() => {
-    fetchAndSetUserData();
-  }, [fetchAndSetUserData]);
+    if (isFocused) {
+      fetchAndSetUserData();
+    }
+  }, [isFocused, fetchAndSetUserData]);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* ONLY SHOW HEADER IF IT IS OWN PROFILE (To keep Settings button) */}
       {isOwnProfile && (
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
@@ -52,7 +59,7 @@ const ProfileScreen = ({ navigation, route }: any) => {
       <ScrollView 
         contentContainerStyle={[
             styles.scrollContent, 
-            !isOwnProfile && { paddingTop: 40 } // Add a little space at the top when viewing others
+            !isOwnProfile && { paddingTop: 40 } 
         ]} 
         showsVerticalScrollIndicator={false}
       >
@@ -89,9 +96,10 @@ const ProfileScreen = ({ navigation, route }: any) => {
   );
 };
 
+// ... styles remain exactly the same
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.creamBg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, paddingTop: Platform.OS === 'android' ? 10 : 0, paddingBottom: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, paddingTop: Platform.OS === 'android' ? 50 : 0, paddingBottom: 20 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: COLORS.primaryBlue },
   settingsButton: { backgroundColor: COLORS.white, padding: 10, borderRadius: 15, elevation: 3 },
   mainWrapper: { paddingHorizontal: 25 },

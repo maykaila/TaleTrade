@@ -60,3 +60,21 @@ export const getUsername = async (uid: string) => {
     return null;
   }
 };
+
+/**
+ * Updates the user's profile image URL in Firestore.
+ */
+export const updateUserProfileImage = async (uid: string, imageUrl: string) => {
+  try {
+    return await firestore()
+      .collection('Users')
+      .doc(uid)
+      .set({
+        photoURL: imageUrl,
+        lastUpdated: firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+  } catch (error) {
+    console.error("Error updating profile image:", error);
+    throw error;
+  }
+};
