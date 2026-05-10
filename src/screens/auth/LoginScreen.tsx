@@ -39,7 +39,7 @@ const LoginScreen = ({ navigation }: any) => {
 
       {/* LOGO */}
       <Image
-        source={require('../../assets/Logo.png')}
+        source={require('../../assets/logoNoBg.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -105,13 +105,13 @@ const LoginScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8DDC7',
+    backgroundColor: '#F5E9CF',
     padding: 30,
     justifyContent: 'center',
   },
   logo: {
-    width: 500,
-    height: 320,
+    width: 200,
+    height: 200,
     alignSelf: 'center',
     marginBottom: 10,
   },

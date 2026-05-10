@@ -15,23 +15,19 @@ import {
   addToWishlist 
 } from '../services/userbookService';
 
-const BookDetailScreen = ({ route }: any) => {
-  // Enforce absolute fallback logic case so route missing parameters never crash the frame
+const BookDetailScreen = ({ route, navigation }: any) => {
   const bookData = route?.params?.bookData; 
 
   const [owners, setOwners] = useState<any[]>([]);
   const [loadingAction, setLoadingAction] = useState(false);
 
-  // Safely extract the raw nested container properties, falling back to an empty object
   const bookId = bookData?.id;
   const volumeInfo = bookData?.volumeInfo || {};
   
-  // UNIFIED BLUEPRINT RESOLVER: Reads safely from volumeInfo (raw) OR top-level (cleaned)
   const title = volumeInfo.title || bookData?.title || 'Untitled Book';
   const description = volumeInfo.description || bookData?.description || 'No description available.';
   const thumbnail = volumeInfo.imageLinks?.thumbnail || bookData?.thumbnail;
   
-  // SURGICAL FIX: Enforce array type parsing checks before firing structural lookups
   const rawAuthors = volumeInfo.authors || bookData?.authors;
   const authorText = Array.isArray(rawAuthors) ? rawAuthors.join(', ') : 'Unknown Author';
 
@@ -48,6 +44,13 @@ const BookDetailScreen = ({ route }: any) => {
   useEffect(() => {
     fetchOwners();
   }, [bookId]);
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    return parts.length > 1 
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() 
+      : parts[0][0].toUpperCase();
+  };
 
   const handleAddBook = async () => {
     if (!bookData) return;
@@ -73,7 +76,6 @@ const BookDetailScreen = ({ route }: any) => {
     }
   };
 
-  // If data failed to migrate completely down the tab navigation chain
   if (!bookData) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -84,7 +86,6 @@ const BookDetailScreen = ({ route }: any) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
       <View style={styles.header}>
         {thumbnail ? (
           <Image source={{ uri: thumbnail }} style={styles.mainCover} />
@@ -94,12 +95,9 @@ const BookDetailScreen = ({ route }: any) => {
           </View>
         )}
         <Text style={styles.title}>{title}</Text>
-        
-        {/* FIXED LINE 58: Enclosed fully in structural text layers using our safe computed variable */}
         <Text style={styles.author}>By {authorText}</Text>
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity 
           style={[styles.ownButton, loadingAction && { opacity: 0.7 }]} 
@@ -118,13 +116,11 @@ const BookDetailScreen = ({ route }: any) => {
         </TouchableOpacity>
       </View>
 
-      {/* Description Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About this book</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
 
-      {/* Social Section (Dynamic Owners) */}
       <View style={styles.socialSection}>
         <Text style={styles.sectionTitle}>Users who own this book</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
@@ -134,22 +130,31 @@ const BookDetailScreen = ({ route }: any) => {
                 key={item.id} 
                 style={styles.ownerCard}
                 onPress={() => {
-                  if (item.isMe) {
-                    Alert.alert("Profile", "This is your collection!");
-                  } else {
-                    Alert.alert("Owner Info", `View ${item.username}'s profile to trade?`);
-                  }
+                  // PASS hideHeader PARAMETER HERE
+                  navigation.push('UserProfileView', { 
+                    userId: item.id,
+                    hideHeader: true 
+                  });
                 }}
               >
                 <View style={[
                   styles.profileCircleContainer, 
-                  item.isMe && { borderColor: '#6178b8', borderWidth: 3 } 
+                  item.isMe && { borderColor: '#4A68BE', borderWidth: 2 } 
                 ]}>
-                  <Image source={{ uri: item.photo }} style={styles.profileCircle} />
+                  {item.photo ? (
+                    <Image 
+                      source={{ uri: item.photo }} 
+                      style={styles.profileCircle} 
+                    />
+                  ) : (
+                    <View style={[styles.profileCircle, styles.initialsContainer]}>
+                      <Text style={styles.initialsText}>{getInitials(item.username || 'U')}</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[
                   styles.ownerName, 
-                  item.isMe && { fontWeight: 'bold', color: '#6C63FF' }
+                  item.isMe && { fontWeight: 'bold', color: '#4A68BE' }
                 ]}>
                   {item.username}
                 </Text>
@@ -166,25 +171,27 @@ const BookDetailScreen = ({ route }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E9CF' },
-  header: { alignItems: 'center', padding: 20 },
-  mainCover: { width: 200, height: 300, borderRadius: 15, elevation: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, backgroundColor: '#e2e8f0' },
-  placeholderCover: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed' },
+  header: { alignItems: 'center', padding: 25, backgroundColor: '#F5E9CF', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
+  mainCover: { width: 180, height: 270, borderRadius: 15, elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
+  placeholderCover: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' },
   placeholderText: { color: '#94a3b8', fontWeight: 'bold' },
-  title: { fontSize: 22, fontWeight: 'bold', marginTop: 15, textAlign: 'center', color: '#333' },
-  author: { fontSize: 16, color: '#6C63FF', marginTop: 5, fontWeight: '600' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 20 },
-  ownButton: { backgroundColor: '#6C63FF', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
-  wishButton: { backgroundColor: '#b84242', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold' },
-  section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#222' },
-  description: { color: '#666', lineHeight: 22, fontSize: 14, textAlign: 'justify' },
-  socialSection: { padding: 20, borderTopWidth: 1, borderColor: '#eee', marginBottom: 30 },
+  title: { fontSize: 24, fontWeight: '900', marginTop: 20, textAlign: 'center', color: '#4A68BE' },
+  author: { fontSize: 16, color: '#7E6FB0', marginTop: 5, fontWeight: '600' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 25, paddingHorizontal: 15 },
+  ownButton: { backgroundColor: '#4A68BE', padding: 15, borderRadius: 20, width: '46%', alignItems: 'center', elevation: 3 },
+  wishButton: { backgroundColor: '#7E6FB0', padding: 15, borderRadius: 20, width: '46%', alignItems: 'center', elevation: 3 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  section: { padding: 20, marginHorizontal: 15, backgroundColor: '#FFF', borderRadius: 20, marginBottom: 20, elevation: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 10, color: '#4A68BE' },
+  description: { color: '#555', lineHeight: 22, fontSize: 14, textAlign: 'justify' },
+  socialSection: { padding: 20, marginHorizontal: 15, backgroundColor: '#FFF', borderRadius: 20, marginBottom: 40, elevation: 2 },
   ownerCard: { alignItems: 'center', marginRight: 20 },
-  profileCircleContainer: { borderRadius: 35, padding: 2, justifyContent: 'center', alignItems: 'center' },
-  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#6C63FF' },
-  ownerName: { fontSize: 12, marginTop: 5, color: '#555' },
-  noOwners: { fontStyle: 'italic', color: '#999' }
+  profileCircleContainer: { borderRadius: 35, padding: 2 },
+  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#7E6FB0', backgroundColor: '#FFF' },
+  initialsContainer: { justifyContent: 'center', alignItems: 'center' },
+  initialsText: { color: '#7E6FB0', fontWeight: 'bold', fontSize: 18 },
+  ownerName: { fontSize: 12, marginTop: 5, color: '#555', fontWeight: '600' },
+  noOwners: { fontStyle: 'italic', color: '#999', textAlign: 'center', width: '100%' }
 });
 
 export default BookDetailScreen;

@@ -87,7 +87,7 @@ const RegisterScreen = ({ navigation }: any) => {
         <View style={styles.container}>
           {/* LOGO */}
           <Image
-            source={require('../../assets/Logo.png')}
+            source={require('../../assets/logoNoBg.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -177,7 +177,7 @@ const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: '#E8DDC7',
+    backgroundColor: '#F5E9CF',
   },
   container: {
     flex: 1,
@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   logo: {
-    width: 500,
-    height: 320,
+    width: 200,
+    height: 250,
     alignSelf: 'center',
     marginBottom: 0,
   },
