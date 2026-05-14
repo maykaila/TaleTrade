@@ -4,20 +4,20 @@
     "slug": "taletrade",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/logoNoBg.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./src/assets/logoNoBg.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F5E9CF"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/logoNoBg.png",
-        "backgroundColor": "#F5E9CF"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
       "package": "com.taletrade",
       "googleServicesFile": "./android/app/google-services.json"
