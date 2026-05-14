@@ -1,40 +1,4 @@
 {
-  "expo": {
-    "name": "TaleTrade",
-    "slug": "taletrade",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.taletrade",
-      "googleServicesFile": "./android/app/google-services.json"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "be4cb7d7-b76e-4606-9c1b-3127eb90d180"
-      }
-    }
-  }
+  "name": "TaleTrade",
+  "displayName": "TaleTrade"
 }
-// {
-//   "name": "TaleTrade",
-//   "displayName": "TaleTrade",
-//   "extra": {
-//     "eas": {
-//       "projectId": "be4cb7d7-b76e-4606-9c1b-3127eb90d180"
-//     }
-//   }
-// }
